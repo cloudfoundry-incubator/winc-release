@@ -1,6 +1,12 @@
 $ErrorActionPreference = "Stop";
 trap { $host.SetShouldExit(1) }
 
+$mtx = New-Object System.Threading.Mutex($false, "GrootRootfsMutex")
+
+if (!$mtx.WaitOne(300000)) {
+  throw "Could not acquire Rootfs mutex"
+}
+
 # workaround for https://github.com/Microsoft/hcsshim/issues/155
 Get-ComputeProcess | foreach { c:\var\vcap\packages\winc\winc.exe delete $_.Id }
 
@@ -19,4 +25,7 @@ Write-Host "Begin groot pre-start"
   Write-Host "Finished pulling <%= uri %> image"
 <% end %>
 Write-Host "Finished groot pre-start"
+
+Write-Host "Releasing mutex"
+$mtx.ReleaseMutex()
 
