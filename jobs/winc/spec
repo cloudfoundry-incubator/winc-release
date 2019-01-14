@@ -4,8 +4,9 @@ name: winc
 templates: {}
 
 packages:
-- winc
-- nstar
+- cert-injector
 - diff-exporter
+- nstar
+- winc
 
 properties: {}
