@@ -8,6 +8,13 @@ templates:
 packages:
 - groot
 
+provides:
+- name: groot
+  type: groot
+  properties:
+  - groot.cached_image_uris
+  - groot.driver_store
+
 properties:
   groot.cached_image_uris:
     description: "An array of Windows container image URIs to cache at deployment time."

@@ -6,5 +6,6 @@ templates: {}
 packages:
 - winc
 - nstar
+- diff-exporter
 
 properties: {}

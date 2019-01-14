@@ -1,0 +1,9 @@
+---
+name: diff-exporter
+
+dependencies:
+- golang-windows
+- mingw
+
+files:
+- code.cloudfoundry.org/diff-exporter/**/*
