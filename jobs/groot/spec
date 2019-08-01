@@ -30,3 +30,7 @@ properties:
   groot.log_level:
     description: "Can be debug, info, error or fatal"
     default: "info"
+
+  groot.refresh_all_layers:
+    description: "Delete old layers in the driver store during pre-start."
+    default: false

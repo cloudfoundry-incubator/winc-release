@@ -6,10 +6,9 @@ trap { $host.SetShouldExit(1) }
 Write-Output "Started groot pre-start" | timestamp
 
 $grootDriverStore = "<%= p("groot.driver_store") %>"
-if(Test-Path "$grootDriverStore\volumes"){
-  ls "$grootDriverStore\volumes" | foreach { c:\var\vcap\packages\groot\groot.exe --driver-store $grootDriverStore delete $_.Name }
-}
+$refreshAllLayers=[bool]$<%= p("groot.refresh_all_layers") %>
 
+# TODO: change mutex to semaphore
 $mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
 $thirtyMinutes = 30 * 60 * 1000
 
@@ -25,6 +24,17 @@ $thirtyMinutes = 30 * 60 * 1000
   # when bosh does a restart, the garden server would fail to come up because there is still a
   # process using the old garden-init.exe
   Get-ComputeProcess | foreach { c:\var\vcap\packages\winc\winc.exe delete $_.Id }
+
+  # TODO: document moving this - it should be protected by the mutex, and also
+  # it makes sense to delete containers BEFORE trying to clean up any remaining volumes.
+  if(Test-Path "$grootDriverStore\volumes"){
+    ls "$grootDriverStore\volumes" | foreach { c:\var\vcap\packages\groot\groot.exe --driver-store $grootDriverStore delete $_.Name }
+  }
+
+  if($refreshAllLayers){
+  # TODO: decide what to call the command, maybe clean? See https://github.com/cloudfoundry/grootfs/blob/master/commands/clean.go
+  # C:\var\vcap\packages\groot\groot.exe --config "C:\var\vcap\jobs\groot\config\groot.yml" --driver-store $grootDriverStore clean
+  }
 
   Write-Output "Begin pulling <%= uri %> image" | timestamp
   C:\var\vcap\packages\groot\groot.exe --config "C:\var\vcap\jobs\groot\config\groot.yml" --driver-store $grootDriverStore pull <%= uri %>
