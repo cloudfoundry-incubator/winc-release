@@ -32,8 +32,9 @@ $thirtyMinutes = 30 * 60 * 1000
   }
 
   if($refreshAllLayers){
-  # TODO: decide what to call the command, maybe clean? See https://github.com/cloudfoundry/grootfs/blob/master/commands/clean.go
-  # C:\var\vcap\packages\groot\groot.exe --config "C:\var\vcap\jobs\groot\config\groot.yml" --driver-store $grootDriverStore clean
+    Write-Output "Refreshing groot layers" | timestamp
+    # TODO: decide what to call the command, maybe clean? See https://github.com/cloudfoundry/grootfs/blob/master/commands/clean.go
+    # C:\var\vcap\packages\groot\groot.exe --config "C:\var\vcap\jobs\groot\config\groot.yml" --driver-store $grootDriverStore clean
   }
 
   Write-Output "Begin pulling <%= uri %> image" | timestamp
