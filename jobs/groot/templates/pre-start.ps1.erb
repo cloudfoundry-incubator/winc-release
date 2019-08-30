@@ -1,40 +1,49 @@
+filter timestamp {"$(Get-Date -Format G): $_"}
+
 $ErrorActionPreference = "Stop";
 trap { $host.SetShouldExit(1) }
 
-Write-Host "Started groot pre-start"
+Write-Output "Started groot pre-start" | timestamp
 
 $grootDriverStore = "<%= p("groot.driver_store") %>"
 if(Test-Path "$grootDriverStore\volumes"){
   ls "$grootDriverStore\volumes" | foreach { c:\var\vcap\packages\groot\groot.exe --driver-store $grootDriverStore delete $_.Name }
 }
 
-$mtx = New-Object System.Threading.Mutex($false, "RootfsMutex")
-$thirtyMinutes = 30 * 60 * 1000
+$sharedEventName = "RootfsEvent"
+try {
+  $event = [System.Threading.EventWaitHandle]::OpenExisting($sharedEventName)
+} catch {
+  $mode = New-Object System.Threading.EventResetMode
+  $initSignaled = $false
+  $event = New-Object System.Threading.EventWaitHandle($initSignaled, $mode, $sharedEventName)
+}
 
 <% p("groot.cached_image_uris").each do |uri| %>
-  Write-Host "Acquiring RootfsMutex"
-  if (!$mtx.WaitOne($thirtyMinutes)) {
-    throw "Could not acquire RootfsMutex after 30 minutes"
-  }
-  Write-Host "Acquired RootfsMutex"
-
   # We used to include this as a workaround for https://github.com/Microsoft/hcsshim/issues/155,
   # but it turns out this is still required - if there are containers existing
   # when bosh does a restart, the garden server would fail to come up because there is still a
   # process using the old garden-init.exe
   Get-ComputeProcess | foreach { c:\var\vcap\packages\winc\winc.exe delete $_.Id }
 
-  Write-Host "Begin pulling <%= uri %> image"
+  Write-Output "Begin pulling <%= uri %> image" | timestamp
   C:\var\vcap\packages\groot\groot.exe --config "C:\var\vcap\jobs\groot\config\groot.yml" --driver-store $grootDriverStore pull <%= uri %>
+
   if ($LASTEXITCODE -ne 0) {
-    $mtx.ReleaseMutex()
-    Write-Host "Released RootfsMutex"
+    Write-Output "Failed pulling <%= uri %> image" | timestamp
+    if (!$event.Set()) {
+      Write-Output "Failed to signal the $sharedEventName event" | timestamp
+      exit 1
+    }
     exit $LASTEXITCODE
   }
-  Write-Host "Finished pulling <%= uri %> image"
+  Write-Output "Finished pulling <%= uri %> image" | timestamp
 
-  $mtx.ReleaseMutex()
-  Write-Host "Released RootfsMutex"
+  if (!$event.Set()) {
+    Write-Output "Failed to signal the $sharedEventName event" | timestamp
+    exit 1
+  }
+  Write-Output "$sharedEventName event successfully signaled" | timestamp
 <% end %>
 
-Write-Host "Finished groot pre-start"
+Write-Output "Finished groot pre-start" | timestamp
