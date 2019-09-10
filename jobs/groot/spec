@@ -33,4 +33,4 @@ properties:
 
   groot.refresh_base_layer:
     description: "Delete size file in order to pull fresh base layer."
-    default: False
+    default: false
